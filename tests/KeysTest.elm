@@ -70,7 +70,7 @@ eventTests action listener =
             \_ ->
                 Html.textarea
                     [ listener defaultOptions
-                        [ ( [ Ctrl, Shift ], Keys.enter, EventFired )
+                        [ ( [ Shift, Ctrl ], Keys.enter, EventFired )
                         ]
                     ]
                     []

@@ -238,4 +238,13 @@ checkListeners listeners event =
 
 isMatch : List Modifier -> KeyCode -> KeyboardEvent -> Bool
 isMatch modifiers keyCode event =
-    keyCode == event.keyCode && modifiers == event.modifiers
+    keyCode == event.keyCode && hasSameMembers modifiers event.modifiers
+
+
+hasSameMembers : List a -> List a -> Bool
+hasSameMembers a b =
+    let
+        subset a b =
+            List.all (\i -> List.member i a) b
+    in
+        subset a b && subset b a
