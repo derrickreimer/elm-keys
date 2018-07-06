@@ -1,0 +1,236 @@
+module Keys
+    exposing
+        ( Modifier(..)
+        , KeyCode
+        , KeyboardEvent
+        , Listener
+        , onKeydown
+        , onKeypress
+        , onKeyup
+        , enter
+        , esc
+        , defaultOptions
+        , preventDefault
+        )
+
+{-| Advanced keyboard event listener functions.
+
+
+# Definitions
+
+@docs Modifier, KeyCode, KeyboardEvent, Listener
+
+
+# Key Code Helpers
+
+@docs enter, esc
+
+
+# Option Helpers
+
+@docs defaultOptions, preventDefault
+
+
+# Events
+
+@docs onKeydown, onKeypress, onKeyup
+
+-}
+
+import Html exposing (Attribute)
+import Html.Events exposing (Options, onWithOptions)
+import Json.Decode as Decode exposing (Decoder, field, int, bool)
+import List
+import Tuple
+
+
+{-| Modifier keys.
+-}
+type Modifier
+    = Alt
+    | Ctrl
+    | Shift
+    | Meta
+
+
+{-| The keycode for a character.
+-}
+type alias KeyCode =
+    Int
+
+
+{-| A JavaScript keyboard event.
+-}
+type alias KeyboardEvent =
+    { keyCode : KeyCode
+    , modifiers : List Modifier
+    , repeat : Bool
+    }
+
+
+{-| An event listener definition.
+-}
+type alias Listener msg =
+    ( List Modifier, KeyCode, KeyboardEvent -> msg )
+
+
+
+-- KEYCODE HELPERS
+
+
+{-| The code for the `enter` key.
+-}
+enter : KeyCode
+enter =
+    13
+
+
+{-| The code for the `esc` key.
+-}
+esc : KeyCode
+esc =
+    27
+
+
+
+-- OPTION HELPERS
+
+
+{-| The default event options (from `Html.Events`).
+-}
+defaultOptions : Options
+defaultOptions =
+    Html.Events.defaultOptions
+
+
+{-| Prevent the default behavior when the event fires.
+-}
+preventDefault : Options
+preventDefault =
+    { defaultOptions | preventDefault = True }
+
+
+
+-- EVENTS
+
+
+{-| Capture <keydown> events on inputs and text areas and match against
+one or more different sets of listener criteria.
+
+Suppose you want to listen for both the `esc` key and the `meta + enter` key combinations
+and prevent the default behavior. You would define your event listener like this:
+
+    import Keys exposing (Modifier(..), KeyboardEvent, preventDefault, onKeydown, esc, enter)
+
+    type Msg
+        = Escaped KeyboardEvent
+        | Submitted KeyboardEvent
+
+    view : Html Msg
+    view =
+        textarea
+            [ onKeydown preventDefault
+                [ ( [ Meta ], enter, Submitted )
+                , ( [], esc, Escaped )
+                ]
+            ]
+
+The first argument is [`Html.Events` options](options) and the second argument is
+an array of three-part tuples containing:
+
+  - the required modifier keys (shift, alt, control, or meta),
+  - the key code, and
+  - the message constructor
+
+[keydown]: https://developer.mozilla.org/en-US/docs/Web/Events/keydown
+[options]: http://package.elm-lang.org/packages/elm-lang/html/2.0.0/Html-Events#Options
+
+-}
+onKeydown : Options -> List (Listener msg) -> Attribute msg
+onKeydown =
+    onKeyboardEvent "down"
+
+
+{-| Capture <keypress> events on inputs and text areas and match against
+one or more different sets of listener criteria.
+
+See [`onKeydown`](#onKeydown) for more information.
+
+[keypress]: https://developer.mozilla.org/en-US/docs/Web/Events/keypress
+
+-}
+onKeypress : Options -> List (Listener msg) -> Attribute msg
+onKeypress =
+    onKeyboardEvent "press"
+
+
+{-| Capture <keyup> events on inputs and text areas and match against
+one or more different sets of listener criteria.
+
+See [`onKeydown`](#onKeydown) for more information.
+
+[keyup]: https://developer.mozilla.org/en-US/docs/Web/Events/keyup
+
+-}
+onKeyup : Options -> List (Listener msg) -> Attribute msg
+onKeyup =
+    onKeyboardEvent "up"
+
+
+
+-- PRIVATE FUNCTIONS
+
+
+onKeyboardEvent : String -> Options -> List (Listener msg) -> Attribute msg
+onKeyboardEvent action options listeners =
+    eventDecoder
+        |> Decode.andThen (checkListeners listeners)
+        |> onWithOptions ("key" ++ action) options
+
+
+eventDecoder : Decoder KeyboardEvent
+eventDecoder =
+    Decode.map3 KeyboardEvent
+        (field "keyCode" int)
+        modifierDecoder
+        (field "repeat" bool)
+
+
+modifierDecoder : Decoder (List Modifier)
+modifierDecoder =
+    Decode.map4 mapModifiers
+        (field "altKey" bool)
+        (field "ctrlKey" bool)
+        (field "shiftKey" bool)
+        (field "metaKey" bool)
+
+
+mapModifiers : Bool -> Bool -> Bool -> Bool -> List Modifier
+mapModifiers altKey ctrlKey shiftKey metaKey =
+    [ ( Alt, altKey ), ( Ctrl, ctrlKey ), ( Shift, shiftKey ), ( Meta, metaKey ) ]
+        |> List.filter Tuple.second
+        |> List.map Tuple.first
+
+
+checkListeners : List (Listener msg) -> KeyboardEvent -> Decoder msg
+checkListeners listeners event =
+    case listeners of
+        [] ->
+            Decode.fail "no match"
+
+        [ ( modifiers, keyCode, toMsg ) ] ->
+            if isMatch modifiers keyCode event then
+                Decode.succeed (toMsg event)
+            else
+                Decode.fail "no match"
+
+        ( modifiers, keyCode, toMsg ) :: tl ->
+            if isMatch modifiers keyCode event then
+                Decode.succeed (toMsg event)
+            else
+                checkListeners tl event
+
+
+isMatch : List Modifier -> KeyCode -> KeyboardEvent -> Bool
+isMatch modifiers keyCode event =
+    keyCode == event.keyCode && modifiers == event.modifiers
