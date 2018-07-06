@@ -44,7 +44,7 @@ import List
 import Tuple
 
 
-{-| Modifier keys.
+{-| The possible modifier keys on keyboard events.
 -}
 type Modifier
     = Alt
@@ -53,7 +53,7 @@ type Modifier
     | Meta
 
 
-{-| The keycode for a character.
+{-| An ASCII character code.
 -}
 type alias KeyCode =
     Int
@@ -96,7 +96,12 @@ esc =
 -- OPTION HELPERS
 
 
-{-| The default event options (from `Html.Events`).
+{-| The default event options.
+
+See [`Html.Events`](events).
+
+[events]: http://package.elm-lang.org/packages/elm-lang/html/2.0.0/Html-Events#Options
+
 -}
 defaultOptions : Options
 defaultOptions =
