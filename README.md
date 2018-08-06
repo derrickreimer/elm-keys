@@ -2,6 +2,8 @@
 
 This library provides keyboard event functions, similar to the helpers provided in [Html.Events](http://package.elm-lang.org/packages/elm-lang/html/latest/Html-Events).
 
+[![Travis build status](https://travis-ci.org/derrickreimer/elm-keys.svg?branch=master)](https://travis-ci.org/derrickreimer/elm-keys)
+
 ## Usage
 
 The core event types this library supports are `keydown`, `keypress`, and `keyup`. Since it's often necessary to listen for multiple keyboard events on a given form control, the event functions accept a list of listener criteria that map to particular message constructor.
