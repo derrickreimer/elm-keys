@@ -1,0 +1,14 @@
+
+{
+  "private": true,
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "elm-test"
+  },
+  "devDependencies": {
+    "elm": "0.18.0",
+    "elm-test": "0.18.8"
+  }
+}
