@@ -9,6 +9,7 @@ module Keys
         , onKeyup
         , enter
         , esc
+        , tab
         , defaultOptions
         , preventDefault
         )
@@ -23,7 +24,7 @@ module Keys
 
 # Key Code Helpers
 
-@docs enter, esc
+@docs enter, esc, tab
 
 
 # Option Helpers
@@ -76,6 +77,13 @@ type alias Listener msg =
 
 
 -- KEYCODE HELPERS
+
+
+{-| The code for the `tab` key.
+-}
+tab : KeyCode
+tab =
+    9
 
 
 {-| The code for the `enter` key.
