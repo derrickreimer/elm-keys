@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "summary": "Advanced keyboard event bindings for Elm",
     "repository": "https://github.com/derrickreimer/elm-keys.git",
     "license": "MIT",
