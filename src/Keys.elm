@@ -1,18 +1,9 @@
-module Keys
-    exposing
-        ( Modifier(..)
-        , KeyCode
-        , KeyboardEvent
-        , Listener
-        , onKeydown
-        , onKeypress
-        , onKeyup
-        , enter
-        , esc
-        , tab
-        , defaultOptions
-        , preventDefault
-        )
+module Keys exposing
+    ( Modifier(..), KeyCode, KeyboardEvent, Listener
+    , enter, esc, tab
+    , defaultOptions, preventDefault
+    , onKeydown, onKeypress, onKeyup
+    )
 
 {-| Advanced keyboard event listener functions.
 
@@ -39,8 +30,8 @@ module Keys
 -}
 
 import Html exposing (Attribute)
-import Html.Events exposing (Options, onWithOptions)
-import Json.Decode as Decode exposing (Decoder, field, int, bool)
+import Html.Events exposing (preventDefaultOn)
+import Json.Decode as Decode exposing (Decoder, bool, field, int)
 import List
 import Tuple
 
@@ -104,6 +95,11 @@ esc =
 -- OPTION HELPERS
 
 
+type Options
+    = Default
+    | PreventDefault
+
+
 {-| The default event options.
 
 See [`Html.Events`](events).
@@ -113,14 +109,14 @@ See [`Html.Events`](events).
 -}
 defaultOptions : Options
 defaultOptions =
-    Html.Events.defaultOptions
+    Default
 
 
 {-| Prevent the default behavior when the event fires.
 -}
 preventDefault : Options
 preventDefault =
-    { defaultOptions | preventDefault = True }
+    PreventDefault
 
 
 
@@ -133,7 +129,7 @@ one or more different sets of listener criteria.
 Suppose you want to listen for both the `esc` key and the `meta + enter` key combinations
 and prevent the default behavior. You would define your event listener like this:
 
-    import Keys exposing (Modifier(..), KeyboardEvent, preventDefault, onKeydown, esc, enter)
+    import Keys exposing (KeyboardEvent, Modifier(..), enter, esc, onKeydown, preventDefault)
 
     type Msg
         = Escaped KeyboardEvent
@@ -198,7 +194,18 @@ onKeyboardEvent : String -> Options -> List (Listener msg) -> Attribute msg
 onKeyboardEvent action options listeners =
     eventDecoder
         |> Decode.andThen (checkListeners listeners)
-        |> onWithOptions ("key" ++ action) options
+        |> Decode.map (optionsToDecoder options)
+        |> preventDefaultOn ("key" ++ action)
+
+
+optionsToDecoder : Options -> msg -> ( msg, Bool )
+optionsToDecoder options msg =
+    case options of
+        Default ->
+            ( msg, False )
+
+        PreventDefault ->
+            ( msg, True )
 
 
 eventDecoder : Decoder KeyboardEvent
@@ -234,12 +241,14 @@ checkListeners listeners event =
         [ ( modifiers, keyCode, toMsg ) ] ->
             if isMatch modifiers keyCode event then
                 Decode.succeed (toMsg event)
+
             else
                 Decode.fail "no match"
 
         ( modifiers, keyCode, toMsg ) :: tl ->
             if isMatch modifiers keyCode event then
                 Decode.succeed (toMsg event)
+
             else
                 checkListeners tl event
 
@@ -252,7 +261,7 @@ isMatch modifiers keyCode event =
 hasSameMembers : List a -> List a -> Bool
 hasSameMembers a b =
     let
-        subset a b =
-            List.all (\i -> List.member i a) b
+        subset aa bb =
+            List.all (\i -> List.member i aa) bb
     in
-        subset a b && subset b a
+    subset a b && subset b a
